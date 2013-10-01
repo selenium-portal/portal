@@ -1,0 +1,5 @@
+#!/usr/bin/env node
+var Portal = require('../Portal'),
+    app    = new Portal(process.argv);
+
+app.run();

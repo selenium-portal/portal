@@ -1,0 +1,11 @@
+{
+  "env": {
+    "dev": {
+      "urls": {
+        "news": "http://www.nytimes.com",
+        "shopping": "http://www.amazon.com"
+      }
+    }
+  }
+}
+
