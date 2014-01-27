@@ -1,11 +1,17 @@
 {
   "env": {
     "dev": {
-      "urls": {
-        "news": "http://www.nytimes.com",
-        "shopping": "http://www.amazon.com"
-      }
+      "host": "http://www.nytimes.com"
     }
-  }
+  },
+
+  "pages": {
+    "home": "/",
+    "science": "/pages/science"
+  },
+
+  "reporters": [
+    "./lib/reporters/console"
+  ]
 }
 
