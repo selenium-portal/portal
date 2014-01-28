@@ -8,18 +8,19 @@
     "portal": "./bin/portal"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "mocha test/unit",
+    "regression": "config=test/regression/config.json env=development ./bin/portal test/regression",
     "preinstall": "./bin/scripts/preinstall.sh"
   },
   "dependencies": {
-    "selenium-webdriver": "2.35.1",
+    "selenium-webdriver": "2.39.0",
     "when": "2.4.0",
     "phantomjs": "1.9.2-0"
   },
   "devDependencies": {
-    "mocha": "1.13.0",
-    "sinon": "1.7.3",
-    "should": "1.3.0"
+    "mocha"     : "1.13.0",
+    "sinon"     : "1.7.3",
+    "expect.js" : "0.2.0"
   },
   "license": "None"
 }

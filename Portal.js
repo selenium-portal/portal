@@ -3,6 +3,7 @@
 var TestCase       = require('./lib/TestCase'),
     cutil          = require('./lib/util'),
     decorateDriver = require('./lib/driverDecorator'),
+    ModuleLoader   = require('./lib/ModuleLoader'),
     webdriver      = require('selenium-webdriver'),
     SeleniumServer = require('selenium-webdriver/remote').SeleniumServer,
     util           = require('util'),
@@ -30,9 +31,9 @@ util.inherits(Portal, EventEmitter);
  */
 Portal.prototype.init = function () {
   try {
-    this.config = require(path.resolve(process.cwd(), process.env.config));
-    this.env    = this.config.env[process.env.env];
-    this.pages  = this.config.pages;
+    this.config      = require(path.resolve(process.cwd(), process.env.config));
+    this.env         = this.config.env[process.env.env];
+    this.pages       = this.config.pages || {};
   } catch (e) {
     console.error(e);
     console.error('Usage: `config=config.json env=dev', this.argv[0], this.argv[1], 'testpaths');
@@ -45,11 +46,23 @@ Portal.prototype.init = function () {
     process.exit(1);
   }
 
+  // Load modules
+  this.loadModules(this.config.modules);
+
   // Create reporters
   this.reporters = this.startReporters(this.config.reporters);
 
   webdriver.promise.controlFlow().on('uncaughtException', this.errorOut.bind(this, 'uncaught'));
   return this.startLocalServer().then(this.runTests.bind(this), this.errorOut.bind(this, 'caught'));
+};
+
+/**
+ * @method loadModules
+ */
+Portal.prototype.loadModules = function (moduleConfig) {
+  moduleConfig = moduleConfig || {};
+  this.modules = new ModuleLoader(moduleConfig);
+  this.modules.load();
 };
 
 /**
@@ -91,8 +104,8 @@ Portal.prototype.runTests = function () {
 Portal.prototype.createDriver = function () {
   var driver = new webdriver.Builder()
     .usingServer('http://localhost:4444/wd/hub')
-    .withCapabilities(webdriver.Capabilities.phantomjs().set(
-      'phantomjs.binary.path', path.resolve(__dirname, 'node_modules', 'phantomjs', 'bin', 'phantomjs')))
+    .withCapabilities(webdriver.Capabilities.phantomjs()
+      .set('phantomjs.binary.path', path.resolve(__dirname, 'node_modules', 'phantomjs', 'bin', 'phantomjs')))
     .build();
 
   return decorateDriver(driver);
@@ -142,6 +155,7 @@ Portal.prototype.testPassed = function (test, remainingTests) {
 Portal.prototype.testFailed = function (test, remainingTests, failure) {
   this.failedTests.push(test);
   this.emit('failure', failure);
+  this.screenshot();
   this.runQueue(remainingTests);
 };
 
@@ -167,6 +181,11 @@ Portal.prototype.loadTests = function (testPaths, tests) {
       });
 
       tests.concat(this.loadTests(children, tests));
+      return;
+    }
+
+    // Skip if file and filename does not end in .js extension
+    if (!/\.js$/.test(testPath)) {
       return;
     }
 
@@ -229,9 +248,11 @@ Portal.prototype.startLocalServer = function () {
  * Take a screenshot
  */
 Portal.prototype.screenshot = function () {
-  this.lastDriver.takeScreenshot().then(function (data) {
-    fs.writeFileSync('ss1.png', data, 'base64');
-  });
+  if (this.lastDriver) {
+    this.lastDriver.takeScreenshot().then(function (data) {
+      fs.writeFileSync('error.png', data, 'base64');
+    });
+  }
 };
 
 module.exports = Portal;

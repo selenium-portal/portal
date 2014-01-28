@@ -1,4 +1,4 @@
---require should sinon
+--require expect.js sinon
 --reporter dot
 --ui bdd
 --recursive

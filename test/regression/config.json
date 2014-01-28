@@ -1,6 +1,6 @@
 {
   "env": {
-    "dev": {
+    "development": {
       "host": "http://www.nytimes.com"
     }
   },
@@ -12,10 +12,6 @@
 
   "reporters": [
     "./lib/reporters/console"
-  ],
-
-  "modules": {
-    "common": "./lib/modules/util"
-  }
+  ]
 }
 

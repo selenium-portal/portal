@@ -1,5 +1,6 @@
-require('../helpers/spec');
-var Portal = require('../../Portal');
+var spec   = require('../helpers/spec'),
+    expect = require('expect.js'),
+    Portal = require('../../Portal');
 
 describe('Portal App', function () {
   beforeEach(function () {
@@ -14,7 +15,7 @@ describe('Portal App', function () {
 
     it('should load correct tests', function () {
       var tests = portal.loadTests([this.fixturePath('selenium_tests')]);
-      tests.length.should.equal(2);
+      expect(tests.length).to.be(2);
     });
 
 

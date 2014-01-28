@@ -2,7 +2,7 @@ var sinon = require('sinon'),
     path  = require('path');
 
 beforeEach(function () {
-  this.sinon = sinon.sandbox.create();
+  this.sinon       = sinon.sandbox.create();
   this.fixturePath = fixturePath;
 });
 
