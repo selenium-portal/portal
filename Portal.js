@@ -85,8 +85,17 @@ Portal.prototype.startReporters = function (config) {
  * Catch errors and emit error event which reporters listen to
  */
 Portal.prototype.errorOut = function (type, err) {
-  this.emit('failure', err);
+  if (this.activeTest) {
+    this.activeTest.fail(err);
+    this.emit('testcase:failed', this.activeTest, err);
+    this.emit('testcase:end', this.activeTest);
+    this.emit('testrun:end');
+  } else {
+    this.emit('error:unknown', err); 
+  }
+
   this.stopLocalServer();
+
 };
 
 /**
@@ -120,16 +129,17 @@ Portal.prototype.runQueue = function (queue) {
   queue = queue.slice(1);
 
   if (test) {
-    this.emit('testcase:start', test.name, test.description);
-    this.lastDriver  =  test.driver = this.createDriver();
-    test.driver.quit = test.driver.quit.bind(test.driver);
-    test.env         = this.env;
-    test.pages       = this.pages;
+    this.emit('testcase:start', test);
+    this.activeDriver = this.createDriver();
 
+    TestCase.call(test, this);
+
+    this.activeTest = test;
     test.run()
       .then(test.driver.quit)
       .then(this.testPassed.bind(this, test, queue), this.testFailed.bind(this, test, queue))
-      .then(null, this.errorOut.bind(this, 'caught'));
+      .then(null, this.errorOut.bind(this, 'caught'))
+      .then(this.runQueue.bind(this, queue));
   } else {
     this.emit('testrun:end');
     this.stopLocalServer();
@@ -143,7 +153,7 @@ Portal.prototype.runQueue = function (queue) {
  */
 Portal.prototype.testPassed = function (test, remainingTests) {
   this.emit('testcase:passed', test);
-  this.runQueue(remainingTests);
+  this.emit('testcase:end', test);
 };
 
 /**
@@ -153,10 +163,11 @@ Portal.prototype.testPassed = function (test, remainingTests) {
  * @param {Error} failure error object
  */
 Portal.prototype.testFailed = function (test, remainingTests, failure) {
+  console.log('Portal.prototype.testFailed');
   this.failedTests.push(test);
-  this.emit('failure', failure);
+  test.fail(failure);
+  this.emit('testcase:failed', test, failure);
   this.screenshot();
-  this.runQueue(remainingTests);
 };
 
 /**
@@ -196,11 +207,11 @@ Portal.prototype.loadTests = function (testPaths, tests) {
     }
 
     cutil.mixin(TestCase, Test);
-    test      = new Test();
-    test.name = Test.testName;
+    test       = new Test();
+    test.title = Test.testName;
 
-    if (!test.name) {
-      throw new Error('Test ' + testPath + ' must have a name.');
+    if (!test.title) {
+      throw new Error('Test ' + testPath + ' must have a testName property.');
     }
 
     try {
@@ -209,7 +220,6 @@ Portal.prototype.loadTests = function (testPaths, tests) {
       throw new Error('Test ' + testPath + ' must have a description.');
     }
 
-    test.webdriver = webdriver;
     tests.push(test);
   }, this);
 
@@ -230,7 +240,7 @@ Portal.prototype.run = function () {
 Portal.prototype.stopLocalServer = function () {
   var exitCode = this.failedTests.length ? 1 : 0;
 
-  this.server.stop().then(function () {
+  return this.server.stop().then(function () {
     process.exit(exitCode);
   });
 };
@@ -248,8 +258,8 @@ Portal.prototype.startLocalServer = function () {
  * Take a screenshot
  */
 Portal.prototype.screenshot = function () {
-  if (this.lastDriver) {
-    this.lastDriver.takeScreenshot().then(function (data) {
+  if (this.activeDriver) {
+    this.activeDriver.takeScreenshot().then(function (data) {
       fs.writeFileSync('error.png', data, 'base64');
     });
   }
