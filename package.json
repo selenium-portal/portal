@@ -8,7 +8,7 @@
     "portal": "./bin/portal"
   },
   "scripts": {
-    "test": "mocha test/unit",
+    "test": "./node_modules/mocha/bin/mocha test/unit",
     "regression": "config=test/regression/config.json env=development ./bin/portal test/regression",
     "preinstall": "./bin/scripts/preinstall.sh"
   },
