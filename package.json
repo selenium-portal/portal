@@ -1,8 +1,7 @@
 {
-  "name": "portal",
+  "name": "selenium-portal",
   "author": "Seth McLaughlin",
-  "private": true,
-  "version": "0.0.1",
+  "version": "0.0.1-0",
   "description": "Selenium Testing Framework",
   "bin": {
     "portal": "./bin/portal"
@@ -22,6 +21,6 @@
     "sinon"     : "1.7.3",
     "expect.js" : "0.2.0"
   },
-  "license": "None"
+  "license": "MIT"
 }
 
