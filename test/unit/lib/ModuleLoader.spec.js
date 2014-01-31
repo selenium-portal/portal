@@ -12,7 +12,7 @@ describe('ModuleLoader', function () {
         util    : path.resolve(__dirname, '../../fixtures/modules/util')
       };
 
-      loader = new ModuleLoader(config);
+      loader = new ModuleLoader(__dirname, config);
       loader.load();
     });
 
