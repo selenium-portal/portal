@@ -12,6 +12,6 @@ module.exports.description = 'Load the New York Times Science Section';
 module.exports.prototype.execute = function () {
   var d = this.driver;
 
-  d.get(this.page('science'));
+  d.get(this.url('science'));
   d.waitForTitleToBe(/.*Science News*/);
 };

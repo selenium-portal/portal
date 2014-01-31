@@ -31,9 +31,10 @@ util.inherits(Portal, EventEmitter);
  */
 Portal.prototype.init = function () {
   try {
+    this.configPath  = path.dirname(path.resolve(process.cwd(), process.env.config));
     this.config      = require(path.resolve(process.cwd(), process.env.config));
     this.env         = this.config.env[process.env.env];
-    this.pages       = this.config.pages || {};
+    this.urls        = this.config.urls || {};
   } catch (e) {
     console.error(e);
     console.error('Usage: `config=config.json env=dev', this.argv[0], this.argv[1], 'testpaths');
@@ -61,7 +62,7 @@ Portal.prototype.init = function () {
  */
 Portal.prototype.loadModules = function (moduleConfig) {
   moduleConfig = moduleConfig || {};
-  this.modules = new ModuleLoader(moduleConfig);
+  this.modules = new ModuleLoader(this.configPath, moduleConfig);
   this.modules.load();
 };
 
@@ -130,9 +131,8 @@ Portal.prototype.runQueue = function (queue) {
 
   if (test) {
     this.emit('testcase:start', test);
-    this.activeDriver = this.createDriver();
+    this.activeDriver = test.driver;
 
-    TestCase.call(test, this);
 
     this.activeTest = test;
     test.run()
@@ -164,6 +164,7 @@ Portal.prototype.testPassed = function (test, remainingTests) {
  */
 Portal.prototype.testFailed = function (test, remainingTests, failure) {
   console.log('Portal.prototype.testFailed');
+  console.log(failure.stack);
   this.failedTests.push(test);
   test.fail(failure);
   this.emit('testcase:failed', test, failure);
@@ -207,8 +208,9 @@ Portal.prototype.loadTests = function (testPaths, tests) {
     }
 
     cutil.mixin(TestCase, Test);
-    test       = new Test();
-    test.title = Test.testName;
+    test        = new Test();
+    test.title  = Test.testName;
+    test.driver = this.createDriver();
 
     if (!test.title) {
       throw new Error('Test ' + testPath + ' must have a testName property.');
@@ -220,6 +222,7 @@ Portal.prototype.loadTests = function (testPaths, tests) {
       throw new Error('Test ' + testPath + ' must have a description.');
     }
 
+    TestCase.call(test, this);
     tests.push(test);
   }, this);
 

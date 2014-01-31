@@ -12,7 +12,7 @@ module.exports.description = 'Load the New York Times homepage';
 module.exports.prototype.execute = function () {
   var d = this.driver;
 
-  d.get(this.page('home'));
+  d.get(this.url('home'));
   d.waitForTitleToBe(/.*The New York Times.*/);
 };
 

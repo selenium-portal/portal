@@ -14,7 +14,7 @@ module.exports.prototype.execute = function () {
 
   d   = this.driver;
   m   = this.modules;
-  url = this.page.bind(this);
+  url = this.url.bind(this);
 
   d.get('http://www.google.com');
   d.waitForTitleToBe('Google');
