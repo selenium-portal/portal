@@ -1,7 +1,7 @@
 {
   "name": "selenium-portal",
   "author": "Seth McLaughlin",
-  "version": "0.0.1-0",
+  "version": "0.0.1-1",
   "description": "Selenium Testing Framework",
   "bin": {
     "portal": "./bin/portal"
@@ -21,6 +21,10 @@
     "sinon"     : "1.7.3",
     "expect.js" : "0.2.0"
   },
-  "license": "MIT"
+  "license": "MIT",
+  "repository": {
+    "type" : "git",
+    "url" : "http://github.com/selenium-portal/portal.git"
+  }
 }
 
