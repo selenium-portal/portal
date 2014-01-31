@@ -1,6 +1,8 @@
 Portal
 ======
 
+<img src="https://travis-ci.org/sethmcl/portal.png">
+
 Portal is a Node.js application, designed to be a simple solution for writing Selenium tests with JavaScript. Getting started is easy:
 
 ```
