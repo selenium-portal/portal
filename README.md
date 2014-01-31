@@ -1,7 +1,7 @@
 Portal
 ======
 
-<img src="https://travis-ci.org/sethmcl/portal.png">
+Build status: [![View Summary](https://secure.travis-ci.org/sethmcl/portal.png?branch=master)](http://travis-ci.org/#!/sethmcl/portal/branch_summary)
 
 Portal is a Node.js application, designed to be a simple solution for writing Selenium tests with JavaScript. Getting started is easy:
 
