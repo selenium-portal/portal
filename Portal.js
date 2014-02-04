@@ -1,9 +1,11 @@
 'use strict';
 
-var TestCase       = require('./lib/TestCase'),
+var TestCase       = require('./lib/Test'),
     cutil          = require('./lib/util'),
     decorateDriver = require('./lib/driverDecorator'),
-    ModuleLoader   = require('./lib/ModuleLoader'),
+    moduleLoader   = require('./lib/moduleLoader'),
+    pageLoader     = require('./lib/pageLoader'),
+    testLoader     = require('./lib/testLoader'),
     webdriver      = require('selenium-webdriver'),
     SeleniumServer = require('selenium-webdriver/remote').SeleniumServer,
     util           = require('util'),
@@ -48,7 +50,13 @@ Portal.prototype.init = function () {
   }
 
   // Load modules
-  this.loadModules(this.config.modules);
+  this.modules = this.loadModules(this.config.modules);
+
+  // Load pages
+  this.pages = this.loadPages(this.config.pages);
+
+  // Load Tests
+  this.testQueue = this.loadTests(this.argv.slice(2));
 
   // Create reporters
   this.reporters = this.startReporters(this.config.reporters);
@@ -58,12 +66,25 @@ Portal.prototype.init = function () {
 };
 
 /**
+ * @method loadTests
+ */
+Portal.prototype.loadTests = function (testPaths) {
+  return testLoader.load(this, process.cwd(), testPaths);
+};
+
+/**
  * @method loadModules
  */
-Portal.prototype.loadModules = function (moduleConfig) {
-  moduleConfig = moduleConfig || {};
-  this.modules = new ModuleLoader(this.configPath, moduleConfig);
-  this.modules.load();
+Portal.prototype.loadModules = function (modulesConfig) {
+  return moduleLoader.load(this, this.configPath, modulesConfig);
+};
+
+/**
+ * @method loadPages
+ */
+Portal.prototype.loadPages = function (pagesConfig) {
+  pagesConfig     = pagesConfig || {};
+  return pageLoader.load(this, this.configPath, pagesConfig);
 };
 
 /**
@@ -86,10 +107,12 @@ Portal.prototype.startReporters = function (config) {
  * Catch errors and emit error event which reporters listen to
  */
 Portal.prototype.errorOut = function (type, err) {
+  console.log(err);
+  console.log(err.stack);
   if (this.activeTest) {
     this.activeTest.fail(err);
-    this.emit('testcase:failed', this.activeTest, err);
-    this.emit('testcase:end', this.activeTest);
+    this.emit('test:failed', this.activeTest, err);
+    this.emit('test:end', this.activeTest);
     this.emit('testrun:end');
   } else {
     this.emit('error:unknown', err); 
@@ -104,7 +127,6 @@ Portal.prototype.errorOut = function (type, err) {
  */
 Portal.prototype.runTests = function () {
   this.emit('testrun:start');
-  this.testQueue = this.loadTests(this.argv.slice(2));
   this.runQueue(this.testQueue);
 };
 
@@ -115,7 +137,9 @@ Portal.prototype.createDriver = function () {
   var driver = new webdriver.Builder()
     .usingServer('http://localhost:4444/wd/hub')
     .withCapabilities(webdriver.Capabilities.phantomjs()
-      .set('phantomjs.binary.path', path.resolve(__dirname, 'node_modules', 'phantomjs', 'bin', 'phantomjs')))
+      .set('phantomjs.binary.path', path.resolve(__dirname, 'node_modules', 'phantomjs', 'bin', 'phantomjs'))
+      .set('phantomjs.viewportSize', { width: 1024, height: 800 })
+    )
     .build();
 
   return decorateDriver(driver);
@@ -130,11 +154,12 @@ Portal.prototype.runQueue = function (queue) {
   queue = queue.slice(1);
 
   if (test) {
-    this.emit('testcase:start', test);
+    test.initialize();
+
+    this.emit('test:start', test);
     this.activeDriver = test.driver;
+    this.activeTest   = test;
 
-
-    this.activeTest = test;
     test.run()
       .then(test.driver.quit)
       .then(this.testPassed.bind(this, test, queue), this.testFailed.bind(this, test, queue))
@@ -152,8 +177,8 @@ Portal.prototype.runQueue = function (queue) {
  * @param {Array} remainingTests remaining tests
  */
 Portal.prototype.testPassed = function (test, remainingTests) {
-  this.emit('testcase:passed', test);
-  this.emit('testcase:end', test);
+  this.emit('test:passed', test);
+  this.emit('test:end', test);
 };
 
 /**
@@ -167,68 +192,9 @@ Portal.prototype.testFailed = function (test, remainingTests, failure) {
   console.log(failure.stack);
   this.failedTests.push(test);
   test.fail(failure);
-  this.emit('testcase:failed', test, failure);
+  this.emit('test:failed', test, failure);
   this.screenshot();
 };
-
-/**
- * Load tests, recursively parsing directories
- * @param {array} testPaths array of paths to parse
- * @param {array} tests loaded tests
- * @return {array} array of loaded tests
- */
-Portal.prototype.loadTests = function (testPaths, tests) {
-  tests = tests || [];
-
-  testPaths.forEach(function (testPath) {
-    var Test, test, children;
-
-    if (!fs.existsSync) {
-      throw new Error('Unable to find file ' + testPath);
-    }
-
-    if (fs.statSync(testPath).isDirectory()) {
-      children = fs.readdirSync(testPath).map(function (child) {
-        return path.resolve(testPath, child);
-      });
-
-      tests.concat(this.loadTests(children, tests));
-      return;
-    }
-
-    // Skip if file and filename does not end in .js extension
-    if (!/\.js$/.test(testPath)) {
-      return;
-    }
-
-    Test = require(path.resolve(process.cwd(), testPath));
-
-    if (typeof Test !== 'function') {
-      throw new Error('Unable to load ' + testPath);
-    }
-
-    cutil.mixin(TestCase, Test);
-    test        = new Test();
-    test.title  = Test.testName;
-    test.driver = this.createDriver();
-
-    if (!test.title) {
-      throw new Error('Test ' + testPath + ' must have a testName property.');
-    }
-
-    try {
-      test.description = Test.description.slice(0, 40);
-    } catch (e) {
-      throw new Error('Test ' + testPath + ' must have a description.');
-    }
-
-    TestCase.call(test, this);
-    tests.push(test);
-  }, this);
-
-  return tests;
-};
-
 
 /**
  * Run the application
@@ -260,12 +226,11 @@ Portal.prototype.startLocalServer = function () {
 /**
  * Take a screenshot
  */
-Portal.prototype.screenshot = function () {
-  if (this.activeDriver) {
-    this.activeDriver.takeScreenshot().then(function (data) {
-      fs.writeFileSync('error.png', data, 'base64');
-    });
-  }
+Portal.prototype.screenshot = function (driver, filename) {
+  driver.takeScreenshot().then(function (data) {
+    fs.writeFileSync(filename, data, 'base64');
+    this.emit('screenshot:saved', filename);
+  }.bind(this));
 };
 
 module.exports = Portal;

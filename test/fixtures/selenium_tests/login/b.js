@@ -1,3 +1,4 @@
-module.exports             = function () {};
-module.exports.testName    = 'Test B';
-module.exports.description = 'A good test for B';
+module.exports = {
+  title: 'Test B',
+  description: 'The test for B.js'
+};

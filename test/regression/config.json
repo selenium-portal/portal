@@ -12,6 +12,10 @@
 
   "reporters": [
     "./lib/reporters/console"
-  ]
+  ],
+
+  "modules": {
+    "sample": "./modules/sample"
+  }
 }
 
