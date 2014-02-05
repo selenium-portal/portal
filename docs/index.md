@@ -13,7 +13,7 @@ This will place the `portal` command in your system path.
 Running a Portal test requires a few options to be set. This is the basic syntax:
 
 ```bash
-config=config.json env=dev portal test.js
+config=config.json env=dev portal simple_test.js
 ```
 
 `config.json` is the [configuration file](#config.json) which is required for setting environment information.
@@ -32,40 +32,44 @@ A small example test is shown below:
 
 ```javascript
 // simple_test.js
-module.exports             = function () {};
-module.exports.testName    = 'Load Homepage';
-module.exports.tags        = ['sample'];
-module.exports.description = 'Load the New York Times homepage';
-
-/**
- * Execute the test
- */
-module.exports.prototype.execute = function () {
-  var d = this.driver;
-
-  this.step('Load Homepage');
-  d.get('http://www.nytimes.com');
-  d.waitForTitleToBe(/.*The New York Times.*/);
+module.exports = {
+	title: 'Load Homepage',
+	description: 'Load the New York Times homepage',
+	tags: ['sample'],
+	
+	initialize: function (ctx) {
+		this.ctx = ctx;
+	},
+	
+	execute: function () {
+		var ctx = this.ctx;
+		
+		ctx.step('Load Homepage');
+		ctx.driver.get('http://www.nytimes.com');
+		ctx.driver.waitForTitleToBe('The New York Times');
+	}
 };
 ```
 
-The test is a node.js module, and the module's `exports` property must be set to a function. This serves as the constructor function for the test. The following additional properties are important:
+The test is a node.js module, and the module's `exports` property must be set to an object, with several required properties.
 
-* `exports.testName` - A descriptive name for the test. Can be any string.
-* `exports.description` - A longer description of the functionality the test exercises.
-* `exports.tags` - An array of (string) tags. This allows for selecting which tests to run in a given test run. For example, you might want to run all `'login'` tests. Note: selective test running based on tags is not yet implemented.
-* `exports.prototype.execute` - This is the main function where the test's logic resides. Portal will call this method when the test is run. From the `execute` context, several properties are available, described below.
+* `title {string}` - A descriptive name for the test. Can be any string.
+* `description {string}` - A longer description of the functionality the test exercises.
+* `tags {array}` - An array of (string) tags. This allows for selecting which tests to run in a given test run. For example, you might want to run all `'login'` tests. Note: selective test running based on tags is not yet implemented.
+* `execute {function}` - This is the main function where the test's logic resides. Portal will call this method when the test is run.
+* `initialize {function}` - Called once to initialize the test. This function is passed the {TestContext} object, which is described below.
 
-### Properties Injected at Runtime
+### TestContext
 
-Portal will inject a number of properties in to your test object at runtime. You will make use of these properties to interact with the browser as well as the Portal framework.
+The context passed to a test's `initialize` method serves as the API for interacting with the Portal framework.
 
 | Property      | Purpose        | Sample Usage |
 |---------------|----------------|--------------|
-| `driver` | Object used to execute selenium commands. | 	`this.driver.get('http://www.google.com')` |
+| `driver` | Object used to execute selenium commands. | 	`ctx.driver.get('http://www.google.com')` |
 | `step` | Function used to mark a distinct step in a test. Descriptive step names are useful when parsing test results to identify where errors occur. | `this.step('Login to Admin Panel');` |
-| `url` | Function which generates an environment specific URL. | `this.url('home')` |
-| `modules` | Object containing references to any loaded code modules, specified in `config.json`. | `this.modules.util.doSomethingGood()`|
+| `url` | Function which generates an environment specific URL. | `ctx.url('home')` |
+| `modules` | Object containing references to any loaded code modules, specified in `config.json`. | `ctx.modules.util.doSomethingGood()`|
+| `screenshot` | Take a screenshot of the browser's current state. | `ctx.screenshot()`|
 
 ## Driver API
 The `driver` object provides the following methods for controlling the browser:
@@ -85,7 +89,7 @@ Once an element is selected (using a method such as `this.driver.querySelector()
 | `assertClass` | Function which asserts that the element has a given css classname. | `this.driver.querySelector('body').assertClass('ie-7');` This command would throw an error if the `<body>` element on the current page did not have the `ie-7` class applied.|
 | `assertText` | Function which asserts that the element has a given inner text value. | `this.driver.querySelector('#foo').assertText('bye');` This command would throw an error if the inner text of the element with id="foo" was not the string 'bye'|
 
-<a name="wiki-config.json"></a>
+<a name="wiki-config.json"></a>q
 ## Project Configuration With `config.json`
 
 This file contains configuration values which describe your testing environment, how results should be reported, and any supporting code modules which your tests rely upon. A sample configuration is shown below, followed by detailed descriptions of the available properties.
@@ -116,7 +120,11 @@ This file contains configuration values which describe your testing environment,
 
   "modules": {
     "util": "./ns/util"
-  }
+  },
+  
+  "pages": {
+    "home": "./pages/HomePage"
+   }
 }
 ```
 
@@ -177,11 +185,11 @@ Portal emits a set of events which all reporters can listen to, and respond to h
 | `error:unknown` | `error` (the exception) | Emitted when an uncaught exception is thrown in the course of test execution. |
 | `testrun:start` | | Emitted when Portal begins executing the set of tests. |
 | `testrun:end` | | Emitted when Portal stops executing the set of tests. May occur when all tests are complete, or after a failed test. Portal will stop execution after a failed test. |
-| `testcase:passed` | `test` (the test object) | Emitted after a test passes.|
-| `testcase:failed` | `test` (the test object), `failure` (the exception) | Emitted after a test fails.|
-| `testcase:start` | `test` (the test object) | Emitted before a test is executed. |
-| `testcase:end` | `test` (the test object) | Emitted after a test ends, whether it passes or fails. |
-
+| `test:passed` | `test` (the test object) | Emitted after a test passes.|
+| `test:failed` | `test` (the test object), `failure` (the exception) | Emitted after a test fails.|
+| `test:start` | `test` (the test object) | Emitted before a test is executed. |
+| `test:end` | `test` (the test object) | Emitted after a test ends, whether it passes or fails. |
+| `screenshot:saved` | `filepath` (the absolute filesystem path of the screenshot) | Emitted after a screenshot is saved. |
 ### `modules`
 
 Modules contain custom code which your tests rely on. These can be loaded by Portal and made available to your tests at runtime.
