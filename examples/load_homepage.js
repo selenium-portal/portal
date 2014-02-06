@@ -1,19 +1,37 @@
 /**
  * Test loading the NYT homepage 
  */
-module.exports             = function () {};
-module.exports.testName    = 'Load Homepage';
-module.exports.tags        = ['sample'];
-module.exports.description = 'Load the New York Times homepage';
+module.exports = {
+  /**
+   * @property title
+   */
+  title: 'Load Homepage',
 
-/**
- * Execute the test
- */
-module.exports.prototype.execute = function () {
-  var d = this.driver;
+  /**
+   * @property tags
+   */
+  tags: ['sample'],
 
-  d.get(this.url('home'));
-  d.waitForTitleToBe(/.*The New York Times.*/);
+  /**
+   * @property description
+   */
+  description: 'Load the New York Times homepage',
+
+  /**
+   * @method initialize
+   * @param {TestContext} ctx
+   */
+  initialize: function (ctx) {
+    this.ctx = ctx;
+  },
+
+  /**
+   * @method execute
+   */
+  execute: function () {
+    this.ctx.driver.get(this.ctx.url('home'));
+    this.ctx.driver.waitForTitleToBe(/.*The New York Times.*/);
+  }
 };
 
 

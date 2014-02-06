@@ -96,7 +96,7 @@ Portal.prototype.startReporters = function (config) {
 
   config = config || ['./lib/reporters/console'];
   config.forEach(function (reporter) {
-    var Reporter = require(reporter);
+    var Reporter = require(path.resolve(this.configPath, reporter));
     reporters.push(new Reporter(this));
   }, this);
 

@@ -10,6 +10,7 @@
     "test": "./node_modules/mocha/bin/mocha test/unit",
     "regression": "./node_modules/mocha/bin/mocha test/regression/regression.spec.js",
     "regression-raw": "config=test/regression/config.json env=development ./bin/portal test/regression/tests/should_pass/load_page.js",
+    "examples": "config=examples/config.json env=production ./bin/portal examples",
     "preinstall": "./bin/scripts/preinstall.sh"
   },
   "dependencies": {

@@ -1,17 +1,36 @@
 /**
  * Test loading the NYT Science Section
  */
-module.exports             = function () {};
-module.exports.testName    = 'Load Science News';
-module.exports.tags        = ['sample'];
-module.exports.description = 'Load the New York Times Science Section';
+module.exports = {
+  /**
+   * @property title
+   */
+  title: 'Load Science News',
 
-/**
- * Execute the test
- */
-module.exports.prototype.execute = function () {
-  var d = this.driver;
+  /**
+   * @property tags
+   */
+  tags: ['sample'],
 
-  d.get(this.url('science'));
-  d.waitForTitleToBe(/.*Science News*/);
+  /**
+   * @property description
+   */
+  description: 'Load the New York Times science section',
+
+  /**
+   * @method initialize
+   * @param {TestContext} ctx
+   */
+  initialize: function (ctx) {
+    this.ctx = ctx;
+  },
+
+  /**
+   * @method execute
+   */
+  execute: function () {
+    this.ctx.driver.get(this.ctx.url('science'));
+    this.ctx.driver.waitForTitleToBe(/.*Science News*/);
+  }
 };
+
