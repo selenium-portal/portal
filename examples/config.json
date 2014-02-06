@@ -10,10 +10,6 @@
     "science": "/pages/science"
   },
 
-  "reporters": [
-    "../lib/reporters/console"
-  ],
-
   "modules": {
     "common": "../lib/modules/util"
   }

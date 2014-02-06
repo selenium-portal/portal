@@ -13,12 +13,14 @@ This will place the `portal` command in your system path.
 Running a Portal test requires a few options to be set. This is the basic syntax:
 
 ```bash
-config=config.json env=dev portal simple_test.js
+config=config.json env=dev browser=chrome portal simple_test.js
 ```
 
 `config.json` is the [configuration file](#config.json) which is required for setting environment information.
 
 `env` specifies the environment, or server hostname, where the test should be run. The environment name corresponds to a key in the `env` object within `config.json`.
+
+`browser` specifies the browser used to run tests. Valid values include `chrome` and `phantomjs`. The default value is `phantomjs`. If `chrome` is selected, you must have the [chrome driver](http://chromedriver.storage.googleapis.com/index.html) binary in your system path. We recommend version 2.9 or greater.
 
 `test.js` is the test that you wish to run. You can also specify a directory of tests instead of an individual file.
 
