@@ -36,6 +36,7 @@ Portal.prototype.init = function () {
     this.configPath  = path.dirname(path.resolve(process.cwd(), process.env.config));
     this.config      = require(path.resolve(process.cwd(), process.env.config));
     this.env         = this.config.env[process.env.env];
+    this.browser     = (process.env.browser || 'phantomjs').toLowerCase();
     this.urls        = this.config.urls || {};
   } catch (e) {
     console.error(e);
@@ -115,7 +116,7 @@ Portal.prototype.errorOut = function (type, err) {
     this.emit('test:end', this.activeTest);
     this.emit('testrun:end');
   } else {
-    this.emit('error:unknown', err); 
+    this.emit('error:unknown', err);
   }
 
   this.stopLocalServer();
@@ -134,13 +135,19 @@ Portal.prototype.runTests = function () {
  * Create selenium driver with current settings
  */
 Portal.prototype.createDriver = function () {
-  var driver = new webdriver.Builder()
-    .usingServer('http://localhost:4444/wd/hub')
-    .withCapabilities(webdriver.Capabilities.phantomjs()
-      .set('phantomjs.binary.path', path.resolve(__dirname, 'node_modules', 'phantomjs', 'bin', 'phantomjs'))
-      .set('phantomjs.viewportSize', { width: 1024, height: 800 })
-    )
-    .build();
+  var driver, caps;
+
+  if (this.browser === 'chrome') {
+    caps = webdriver.Capabilities.chrome();
+  } else {
+    caps = webdriver.Capabilities.phantomjs();
+    caps.set('phantomjs.binary.path', path.resolve(__dirname, 'node_modules', 'phantomjs', 'bin', 'phantomjs'));
+  }
+
+  driver = new webdriver.Builder()
+              .usingServer('http://localhost:4444/wd/hub')
+              .withCapabilities(caps)
+              .build();
 
   return decorateDriver(driver);
 };
